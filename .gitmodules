@@ -1,0 +1,4 @@
+[submodule "terraform-provider-hashicups-pf"]
+	path = terraform-provider-hashicups-pf
+	url = https://github.com/hashicorp/terraform-provider-hashicups-pf
+	branch = boilerplate
