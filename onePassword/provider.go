@@ -43,7 +43,9 @@ func (p *onepprovider) Configure(ctx context.Context, req provider.ConfigureRequ
 
 // DataSources defines the data sources implemented in the provider.
 func (p *onepprovider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return nil
+	return []func() datasource.DataSource{
+		NewItemsDataSource,
+	}
 }
 
 // Resources defines the resources implemented in the provider.

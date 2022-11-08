@@ -11,3 +11,9 @@ terraform {
 #
 
 provider  "onepprovider" {}
+
+data "onepprovider_items" "edu"{}
+
+#output "edu_coffees" {
+#  value = data.onepprovider_items.edu
+#}
