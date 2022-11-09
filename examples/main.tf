@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     onepprovider = {
-      source  = "hashicorp.com/edu/onepassword"
+      source = "hashicorp.com/edu/onepassword"
 
     }
   }
@@ -10,19 +10,19 @@ terraform {
 #provider "onepasswordprovider" {}
 #
 
-provider  "onepprovider" {}
+provider "onepprovider" {}
 
-data "onepprovider_items" "edu"{
-  vault = "hi"
-  item = "sk"
-  field = "sfj"
+data "onepprovider_items" "edu" {
+  # vault = "hi"
+  # item  = "sk"
+  # field = "sfj"
 }
-#data "fgdgd" "edu"{
+# data "fgdgd" "edu"{
 #  vault = "hi"
 #  item = "sk"
 #  field = "sfj"
 #}
 
-#output "edu_coffees" {
-#  value = data.onepprovider_items.edu
-#}
+output "edu_coffees" {
+  value = data.onepprovider_items.edu
+}
