@@ -2,6 +2,7 @@ package onePassword
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -33,18 +34,19 @@ type hashicupsProviderModel struct {
 
 // GetSchema defines the provider-level schema for configuration data.
 func (p *onepprovider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+	fmt.Println("SLAm")
 	return tfsdk.Schema{}, nil
 }
 
 // Configure prepares a HashiCups API client for data sources and resources.
 func (p *onepprovider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-
 }
 
 // DataSources defines the data sources implemented in the provider.
 func (p *onepprovider) DataSources(_ context.Context) []func() datasource.DataSource {
+
 	return []func() datasource.DataSource{
-		NewItemsDataSource,
+		NewopItemsDataSource,
 	}
 }
 
