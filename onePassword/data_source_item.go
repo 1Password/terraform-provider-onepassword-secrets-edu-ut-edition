@@ -77,9 +77,7 @@ func (d *opItemDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	var data itemsModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
-	// data.Vault = types.StringValue("alam")
-	// data.Field = types.StringValue("email")
-	// data.Item = types.StringValue("pass")
+	// This is where we write the read code to pass in the data arguments to the CLI
 	data.Reference = types.StringValue("ref")
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
