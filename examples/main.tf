@@ -13,9 +13,9 @@ terraform {
 provider "onepprovider" {}
 
 data "onepprovider_items" "edu" {
-  # vault = "hi"
-  # item  = "sk"
-  # field = "sfj"
+  vault = "hi"
+  item  = "sk"
+  field = "sfj"
 }
 # data "fgdgd" "edu"{
 #  vault = "hi"
@@ -24,5 +24,5 @@ data "onepprovider_items" "edu" {
 #}
 
 output "edu_coffees" {
-  value = data.onepprovider_items.edu
+  value = data.onepprovider_items.edu.reference
 }
