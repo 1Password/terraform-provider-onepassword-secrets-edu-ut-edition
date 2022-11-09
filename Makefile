@@ -3,7 +3,7 @@ default: install
 generate:
 	go generate ./...
 
-install:
+i:
 	go install .
 
 test:

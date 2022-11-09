@@ -2,6 +2,9 @@ package onePassword
 
 import (
 	"context"
+	"log"
+	"os/exec"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -75,10 +78,16 @@ func (d *opItemDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 // Read refreshes the Terraform state with the latest data.
 func (d *opItemDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data itemsModel
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	var label = "label=" + data.Field.Value
+	out, err := exec.Command("op", "item","get", data.Item.Value, "--fields", label).Output()
+    if err != nil {
+        log.Fatal(err)
+    }
+    // fmt.Printf("Output: %s\n", out)
+	data.Reference = types.StringValue(string(out))
 	// This is where we write the read code to pass in the data arguments to the CLI
-	data.Reference = types.StringValue("ref")
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
