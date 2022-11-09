@@ -23,9 +23,10 @@ type opItemDataSource struct {
 //		Items []itemsModel `tfsdk:"items"`
 //	}
 type itemsModel struct {
-	Vault types.String `tfsdk:"vault"`
-	Item  types.String `tfsdk:"item"`
-	Field types.String `tfsdk:"field"`
+	Vault     types.String `tfsdk:"vault"`
+	Item      types.String `tfsdk:"item"`
+	Field     types.String `tfsdk:"field"`
+	Reference types.String `tfsdk:"reference"`
 }
 
 // Metadata returns the data source type name.
@@ -40,21 +41,28 @@ func (d *opItemDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"vault": {
-				Type: types.StringType,
-				// Required: true,
-				Computed: true,
+				Type:     types.StringType,
+				Required: true,
+				// Computed: true,
 				// Optional: true,
 			},
 
 			"item": {
 				Description: "The name of the item to retrieve.",
 				Type:        types.StringType,
-				// Required:    true,
-				Computed: true,
+				Required:    true,
+				// Computed: true,
 				// Optional: true,
 			},
 			"field": {
 				Description: "The name of the field to retrieve.",
+				Type:        types.StringType,
+				Required:    true,
+				// Computed: true,
+				// Optional: true,
+			},
+			"reference": {
+				Description: "The reference of the field item in the vault",
 				Type:        types.StringType,
 				// Required:    true,
 				Computed: true,
@@ -69,9 +77,8 @@ func (d *opItemDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	var data itemsModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
-	data.Vault = types.StringValue("alam")
-	data.Field = types.StringValue("email")
-	data.Item = types.StringValue("pass")
+	// This is where we write the read code to pass in the data arguments to the CLI
+	data.Reference = types.StringValue("ref")
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
