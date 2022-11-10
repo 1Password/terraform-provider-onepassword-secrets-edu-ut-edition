@@ -2,6 +2,7 @@ package onePassword
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -11,43 +12,45 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces
 var (
-	_ provider.Provider = &onepprovider{}
+	_ provider.Provider = &onePasswordProvider{}
 )
 
 // New is a helper function to simplify provider server and testing implementation.
 func New() provider.Provider {
-	return &onepprovider{}
+	return &onePasswordProvider{}
 }
 
-// hashicupsProvider is the provider implementation.
-type onepprovider struct{}
+// onePasswordProvider is the provider implementation.
+type onePasswordProvider struct{}
 
 // Metadata returns the provider type name.
-func (p *onepprovider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "onepprovider"
+func (p *onePasswordProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "onepassword"
 }
 
-// hashicupsProviderModel maps provider schema data to a Go type.
-type hashicupsProviderModel struct {
+// onePasswordProviderModel maps provider schema data to a Go type.
+type onePasswordProviderModel struct {
 }
 
 // GetSchema defines the provider-level schema for configuration data.
-func (p *onepprovider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *onePasswordProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{}, nil
 }
 
-// Configure prepares a HashiCups API client for data sources and resources.
-func (p *onepprovider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+// Configure prepares a onePassword API client for data sources and resources.
+func (p *onePasswordProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 }
 
 // DataSources defines the data sources implemented in the provider.
-func (p *onepprovider) DataSources(_ context.Context) []func() datasource.DataSource {
+func (p *onePasswordProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewopItemsDataSource,
+		NewReferenceDataSource,
 	}
 }
 
 // Resources defines the resources implemented in the provider.
-func (p *onepprovider) Resources(_ context.Context) []func() resource.Resource {
-	return nil
+func (p *onePasswordProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewSecretResource,
+	}
 }

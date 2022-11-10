@@ -1,20 +1,20 @@
 terraform {
   required_providers {
-    onepprovider = {
+    onepassword = {
       source = "hashicorp.com/edu/onepassword"
 
     }
   }
 }
 
-provider "onepprovider" {}
+provider "onepassword" {}
 
-data "onepprovider_items" "edu" {
+data "onepassword_reference" "edu" {
   vault = "test"
   item  = "login"
   field = "password"
 }
 
-output "edu_coffees" {
-  value = data.onepprovider_items.edu.secret
+output "login_secret" {
+  value = data.onepassword_reference.edu.secret
 }

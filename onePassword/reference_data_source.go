@@ -11,17 +11,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSource = &opItemDataSource{}
+var _ datasource.DataSource = &referenceDataSource{}
 
-func NewopItemsDataSource() datasource.DataSource {
-	return &opItemDataSource{}
+func NewReferenceDataSource() datasource.DataSource {
+	return &referenceDataSource{}
 }
 
 // data source implementation.
-type opItemDataSource struct {
+type referenceDataSource struct {
 }
 
-type itemsModel struct {
+type referenceDataSourceModel struct {
 	Vault  types.String `tfsdk:"vault"`
 	Item   types.String `tfsdk:"item"`
 	Field  types.String `tfsdk:"field"`
@@ -29,19 +29,18 @@ type itemsModel struct {
 }
 
 // Metadata returns the data source type name.
-func (d *opItemDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_items"
+func (d *referenceDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_reference"
 }
 
 // GetSchema defines the schema for the data source.
-func (d *opItemDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (d *referenceDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"vault": {
 				Type:     types.StringType,
 				Required: true,
 			},
-
 			"item": {
 				Description: "The name of the item to retrieve.",
 				Type:        types.StringType,
@@ -62,8 +61,8 @@ func (d *opItemDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (d *opItemDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data itemsModel
+func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var data referenceDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	var reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
