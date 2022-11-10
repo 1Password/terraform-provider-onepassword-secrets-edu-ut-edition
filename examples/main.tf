@@ -6,9 +6,6 @@ terraform {
     }
   }
 }
-#
-#provider "onepasswordprovider" {}
-#
 
 provider "onepprovider" {}
 
