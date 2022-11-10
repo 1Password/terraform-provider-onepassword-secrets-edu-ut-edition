@@ -13,11 +13,11 @@ terraform {
 provider "onepprovider" {}
 
 data "onepprovider_items" "edu" {
-  vault = "Test"
-  item  = "Server"
-  field = "Username"
+  vault = "test"
+  item  = "login"
+  field = "password"
 }
 
 output "edu_coffees" {
-  value = data.onepprovider_items.edu.reference
+  value = data.onepprovider_items.edu.secret
 }
