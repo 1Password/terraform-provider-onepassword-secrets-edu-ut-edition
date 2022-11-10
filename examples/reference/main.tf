@@ -18,3 +18,5 @@ data "onepassword_reference" "edu" {
 output "login_secret" {
   value = data.onepassword_reference.edu.secret
 }
+
+

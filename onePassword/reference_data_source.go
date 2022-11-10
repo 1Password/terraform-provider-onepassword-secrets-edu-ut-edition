@@ -2,7 +2,6 @@ package onePassword
 
 import (
 	"context"
-	"log"
 	"os/exec"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -69,7 +68,11 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 	out, err := exec.Command("op", "read", reference).Output()
 
 	if err != nil {
-		log.Fatal(err)
+		resp.Diagnostics.AddError(
+			"Unable to Read Secret Reference",
+			err.Error(),
+		)
+		return
 	}
 
 	// This might be causing the EOT in the output
