@@ -3,6 +3,7 @@ package onePassword
 import (
 	"context"
 	"os/exec"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -75,8 +76,9 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	// This might be causing the EOT in the output
-	data.Secret = types.StringValue(string(out))
+	var response = string(out)
+	var secret = strings.TrimSpace(response)
+	data.Secret = types.StringValue(secret)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
