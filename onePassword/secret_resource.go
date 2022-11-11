@@ -38,7 +38,7 @@ type secretResourceModel struct {
 }
 
 type passwordRecipeModel struct {
-	CharacterSet []string    `tfsdk:"character_set"`
+	CharacterSet types.Set   `tfsdk:"character_set"`
 	Length       types.Int64 `tfsdk:"length"`
 }
 
@@ -89,7 +89,8 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			"category": {
 				Description: "The category of the secret",
 				Type:        types.StringType,
-				Optional:    true,
+				// Optional:    true,
+				Computed: true,
 			},
 			"password_recipe": {
 				Description: "The password recipe for the secret",
@@ -97,7 +98,7 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"character_set": {
 						Description: "The id of the secret",
-						Type:        types.ListType{},
+						Type:        types.SetType{ElemType: types.StringType},
 						Optional:    true,
 					},
 					"length": {
@@ -105,7 +106,11 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 						Type:        types.Int64Type,
 						Optional:    true,
 					},
+					// }),
 				}),
+				// PlanModifiers: tfsdk.AttributePlanModifiers{
+				// 	tfsdk.UseStateForUnknown(),
+				// },
 			},
 		},
 	}, nil
@@ -118,21 +123,27 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
-	var characters string = strings.Join(data.PasswordRecipe.CharacterSet, ",")
-	var password_recipe_flag = "--generate-password=" + characters + "," + strconv.FormatInt(int64(data.PasswordRecipe.Length.Value), 10)
+	var characters string = ""
+	for _, s := range data.PasswordRecipe.CharacterSet.Elements() {
+		characters += s.String() + ","
+	}
 
-	out, err := exec.Command("op", "item", "create", "--category", data.Category.Value, "--title", data.Title.Value, "--vault", data.Vault.Value, password_recipe_flag).Output()
+	var password_recipe_flag = "=" + characters + strconv.FormatInt(int64(data.PasswordRecipe.Length.Value), 10)
+
+	out, err := exec.Command("op", "item", "create", "--category", "password", "--title", data.Title.Value, "--vault", data.Vault.Value, "--generate-password", password_recipe_flag).Output()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error creating secret",
+			"Could not create secret, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
 	var response = string(out)
 
 	idLine := response[strings.Index(response, "ID:"):strings.Index(response, "Title")]
 	id := strings.TrimSpace(strings.TrimPrefix(idLine, "ID:"))
-
-	titleLine := response[strings.Index(response, "Title:"):strings.Index(response, "Vault")]
-	title := strings.TrimSpace(strings.TrimPrefix(titleLine, "Title:"))
-
-	vaultReferenceLine := response[strings.Index(response, "Vault:"):strings.Index(response, "Created")]
-	vaultReference := strings.TrimSpace(strings.TrimPrefix(vaultReferenceLine, "Vault:"))
-	vault := vaultReference[:strings.Index(vaultReference, " ")]
 
 	createdLine := response[strings.Index(response, "Created:"):strings.Index(response, "Updated")]
 	created := strings.TrimSpace(strings.TrimPrefix(createdLine, "Created:"))
@@ -150,20 +161,11 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 	// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
 
 	data.ID = types.StringValue(id)
-	data.Title = types.StringValue(title)
-	data.Vault = types.StringValue(vault)
 	data.Created = types.StringValue(created)
 	data.Updated = types.StringValue(updated)
 	data.Favorite = types.StringValue(favorite)
 	data.Version = types.StringValue(version)
 	data.Category = types.StringValue("password")
-
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error creating secret",
-			"Could not create secret, unexpected error: "+err.Error(),
-		)
-	}
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)

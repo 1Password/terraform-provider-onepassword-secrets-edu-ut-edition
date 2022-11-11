@@ -11,9 +11,9 @@ provider "onepassword" {}
 
 resource "onepassword_secret" "edu" {
   vault = "test"
-  title = "uber"
+  title = "uber4"
   password_recipe = {
-    character_set = ["DIGITS", "SYMBOLS"]
+    character_set = ["digits", "letters"]
     length        = 30
   }
 }
