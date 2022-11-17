@@ -191,4 +191,24 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 // Delete deletes the resource and removes the Terraform state on success.
 func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+
+	var data secretResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	out, err := exec.Command("op", "item", "delete", data.Title.Value, "--vault", data.Vault.Value).Output()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error deleting secret",
+			"Could not delete secret, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	out = out
+	// var response = string(out)
+	// Need to modify data
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
 }
