@@ -80,6 +80,28 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.StringType,
 				Optional:    true,
 			},
+			// for op item edit (update an item)
+			"new_title": {
+				Description: "new title of the item",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_name": {
+				Description: "name of field of an item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_type": {
+				Description: "type of field of an item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_value": {
+				Description: "value of field of an item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			//
 			"created": {
 				Description: "The time the secret was created",
 				Type:        types.StringType,
@@ -125,27 +147,6 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				// PlanModifiers: tfsdk.AttributePlanModifiers{
 				// 	tfsdk.UseStateForUnknown(),
 				// },
-			},
-			// for op item edit (update an item)
-			"new_title": {
-				Description: "new title of the item",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"field_name": {
-				Description: "name of field of an item for creation/update",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"field_type": {
-				Description: "type of field of an item for creation/update",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"field_value": {
-				Description: "value of field of an item for creation/update",
-				Type:        types.StringType,
-				Optional:    true,
 			},
 		},
 	}, nil
@@ -230,6 +231,11 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	// Different cases of update: execute commands by the optional fields that exist
 	args := []string{}
+	args = append(args, "item")
+	args = append(args, "edit")
+	args = append(args, data.Title.Value)
+	args = append(args, "--vault")
+	args = append(args, data.Vault.Value,)
 
 	// update title 
 	if data.NewTitle.Value != "" {
@@ -250,12 +256,13 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	if data.FieldType.Value != "" && data.FieldValue.Value != "" {
 		resp.Diagnostics.AddError(
-			"Error updating secret item: If you have entered field type and value, please specify field name too!",
+			"Error updating secret item:",
+			"if you have entered field type and value, please specify field name too!",
 		)
 		return
 	}
 
-	out, err := exec.Command("op", "item", "edit", data.Title.Value, "--vault", data.Vault.Value, args...).Output()
+	out, err := exec.Command("op",  args...).Output()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -274,7 +281,7 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	title := strings.TrimSpace(strings.TrimPrefix(titleLine, "Title:"))
 
 	vaultLine := response[strings.Index(response, "Vault:"):strings.Index(response, "Created")]
-	vault := strings.TrimSpace(strings.TrimPrefix(titleLine, "Vault:"))
+	vault := strings.TrimSpace(strings.TrimPrefix(vaultLine, "Vault:"))
 
 	createdLine := response[strings.Index(response, "Created:"):strings.Index(response, "Updated")]
 	created := strings.TrimSpace(strings.TrimPrefix(createdLine, "Created:"))
@@ -291,7 +298,7 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// categoryLine := response[strings.Index(response, "Category:"):]
 	// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
 
-	// HOW TO PARSE FIELDS 
+	// HOW TO PARSE FIELDS  ???
 
 	data.ID = types.StringValue(id)
 	data.Created = types.StringValue(created)
