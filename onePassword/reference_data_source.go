@@ -65,8 +65,11 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 	var data referenceDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	var reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
-	out, err := exec.Command("op", "read", reference).Output()
+	//string reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
+	// out, err := exec.Command("op", "read", reference).Output()
+
+	command := `op read op://test/login/password`
+	out, err := exec.Command("bash", "-c", command).Output()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
