@@ -66,10 +66,9 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	//string reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
-	// out, err := exec.Command("op", "read", reference).Output()
+	//out, err := exec.Command("op", "read", reference).Output()
 
-	command := `op read op://test/login/password`
-	out, err := exec.Command("bash", "-c", command).Output()
+	out, err := exec.Command("/bin/sh", "/home/ubuntu/Desktop/cse301-red-onepassword-terraform-provder/installation/linux/test.sh").Output()
 
 	if err != nil {
 		resp.Diagnostics.AddError(
