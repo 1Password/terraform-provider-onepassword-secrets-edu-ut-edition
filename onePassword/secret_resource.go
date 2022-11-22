@@ -28,6 +28,8 @@ type secretResource struct{}
 type secretResourceModel struct {
 	ID             types.String        `tfsdk:"id"`
 	Title          types.String        `tfsdk:"title"`
+	// tag            types.String        `tfsdk:"tag"` 
+	// url            types.String        `tfsdk:"url"` 
 	Vault          types.String        `tfsdk:"vault"`
 	Created        types.String        `tfsdk:"created"`
 	Updated        types.String        `tfsdk:"updated"`
@@ -65,16 +67,16 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.StringType,
 				Optional:    true,
 			},
-			"tag": { // s
-				Description: "The tags of the secret",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"url": {
-				Description: "The url of the secret",
-				Type:        types.StringType,
-				Optional:    true,
-			},
+			// "tag": { // s
+			// 	Description: "The tags of the secret",
+			// 	Type:        types.StringType,
+			// 	Optional:    true,
+			// },
+			// "url": {
+			// 	Description: "The url of the secret",
+			// 	Type:        types.StringType,
+			// 	Optional:    true,
+			// },
 			"vault": {
 				Description: "The vault associated with the secret",
 				Type:        types.StringType,
@@ -233,14 +235,14 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	args := []string{}
 	args = append(args, "item")
 	args = append(args, "edit")
-	args = append(args, data.Title.Value)
+	args = append(args, data.ID.Value)
 	args = append(args, "--vault")
 	args = append(args, data.Vault.Value,)
 
 	// update title 
 	if data.NewTitle.Value != "" {
 		args = append(args, "title=")
-		args = append(args, data.NewTitle.Value)
+		args = append(args, data.Title.Value)
 	}
 
 	// update field 
@@ -299,6 +301,8 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
 
 	// HOW TO PARSE FIELDS  ???
+
+
 
 	data.ID = types.StringValue(id)
 	data.Created = types.StringValue(created)
