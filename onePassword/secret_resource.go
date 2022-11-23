@@ -1,7 +1,9 @@
 package onePassword
 
 import (
+	"bufio"
 	"context"
+	"log"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -26,8 +28,10 @@ func NewSecretResource() resource.Resource {
 type secretResource struct{}
 
 type secretResourceModel struct {
-	ID             types.String        `tfsdk:"id"`
-	Title          types.String        `tfsdk:"title"`
+	ID    types.String `tfsdk:"id"`
+	Title types.String `tfsdk:"title"`
+	// tag            types.String        `tfsdk:"tag"`
+	// url            types.String        `tfsdk:"url"`
 	Vault          types.String        `tfsdk:"vault"`
 	Created        types.String        `tfsdk:"created"`
 	Updated        types.String        `tfsdk:"updated"`
@@ -35,6 +39,10 @@ type secretResourceModel struct {
 	Version        types.String        `tfsdk:"version"`
 	Category       types.String        `tfsdk:"category"`
 	PasswordRecipe passwordRecipeModel `tfsdk:"password_recipe"`
+	NewTitle       types.String        `tfsdk:"new_title"`
+	FieldName      types.String        `tfsdk:"field_name"`
+	FieldType      types.String        `tfsdk:"field_type"`
+	FieldValue     types.String        `tfsdk:"field_value"`
 }
 
 type passwordRecipeModel struct {
@@ -61,11 +69,43 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.StringType,
 				Optional:    true,
 			},
+			// "tag": { // s
+			// 	Description: "The tags of the secret",
+			// 	Type:        types.StringType,
+			// 	Optional:    true,
+			// },
+			// "url": {
+			// 	Description: "The url of the secret",
+			// 	Type:        types.StringType,
+			// 	Optional:    true,
+			// },
 			"vault": {
 				Description: "The vault associated with the secret",
 				Type:        types.StringType,
 				Optional:    true,
 			},
+			// for op item edit (update an item)
+			"new_title": {
+				Description: "new title of the item",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_name": {
+				Description: "name of field of an item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_type": {
+				Description: "type of field of an item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_value": {
+				Description: "value of field of an item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			//
 			"created": {
 				Description: "The time the secret was created",
 				Type:        types.StringType,
@@ -123,52 +163,114 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 	// Read Terraform plan data into the model
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
+	var requested_password_length = int64(data.PasswordRecipe.Length.Value)
+	if requested_password_length < 1 || requested_password_length > 64 {
+		resp.Diagnostics.AddError("Password recipe not vaild error.", "Password length must be between 1 and 64 inclusive.")
+		return
+	}
+
 	var characters string = ""
 	for _, s := range data.PasswordRecipe.CharacterSet.Elements() {
 		characters += s.String() + ","
 	}
 
-	var password_recipe_flag = "=" + characters + strconv.FormatInt(int64(data.PasswordRecipe.Length.Value), 10)
+	characters = strings.ReplaceAll(characters, "\"", "")
 
-	out, err := exec.Command("op", "item", "create", "--category", "password", "--title", data.Title.Value, "--vault", data.Vault.Value, "--generate-password", password_recipe_flag).Output()
+	var password_recipe_flag = "=" + characters + strconv.FormatInt(requested_password_length, 10)
+	var generate_password_string = "--generate-password" + password_recipe_flag
+
+	cmd := exec.Command("op", "item", "create", "--category", "password", "--title", data.Title.Value, "--vault", data.Vault.Value, generate_password_string)
+
+	// create standard output pipe and error check
+	stdout, err := cmd.StdoutPipe()
 
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error creating secret",
-			"Could not create secret, unexpected error: "+err.Error(),
-		)
-		return
+		log.Fatal(err)
 	}
 
-	var response = string(out)
+	// create standard error pipe and error check
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	idLine := response[strings.Index(response, "ID:"):strings.Index(response, "Title")]
-	id := strings.TrimSpace(strings.TrimPrefix(idLine, "ID:"))
+	// run CLI command and error check the call itself not the output
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
 
-	createdLine := response[strings.Index(response, "Created:"):strings.Index(response, "Updated")]
-	created := strings.TrimSpace(strings.TrimPrefix(createdLine, "Created:"))
+	// instantiate scanner and read standard error
+	scanner := bufio.NewScanner(stderr)
+	scanner.Scan()
+	var error_message = string(scanner.Text())
 
-	updatedLine := response[strings.Index(response, "Updated:"):strings.Index(response, "Favorite")]
-	updated := strings.TrimSpace(strings.TrimPrefix(updatedLine, "Updated:"))
+	// errors from CLU command we will be checking
+	var vault_doesnt_exist = "\"" + data.Vault.Value + "\" isn't a vault in this account."
+	var invalid_arguments_to_generate_password = "Value must be one of `letters,digits,symbols`"
 
-	favoriteLine := response[strings.Index(response, "Favorite:"):strings.Index(response, "Version")]
-	favorite := strings.TrimSpace(strings.TrimPrefix(favoriteLine, "Favorite:"))
+	if strings.Contains(error_message, vault_doesnt_exist) {
+		var error_string = "Vault does not exist error."
 
-	versionLine := response[strings.Index(response, "Version:"):strings.Index(response, "Category")]
-	version := strings.TrimSpace(strings.TrimPrefix(versionLine, "Version:"))
+		var start_index = strings.Index(error_message, string(data.Vault.Value))
+		var end_index = strings.Index(error_message, "account.") + len("account.")
+		var detail_string = "Details: " + error_message[start_index:end_index]
 
-	// categoryLine := response[strings.Index(response, "Category:"):]
-	// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
+		resp.Diagnostics.AddError(error_string, detail_string)
+		return
+	} else if strings.Contains(error_message, invalid_arguments_to_generate_password) {
+		var error_string = "Invalid arguments in character set error."
 
-	data.ID = types.StringValue(id)
-	data.Created = types.StringValue(created)
-	data.Updated = types.StringValue(updated)
-	data.Favorite = types.StringValue(favorite)
-	data.Version = types.StringValue(version)
-	data.Category = types.StringValue("password")
+		var start_index = strings.Index(error_message, "invalid argument")
+		var detail_string = "Details: " + error_message[start_index:]
 
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+		resp.Diagnostics.AddError(error_string, detail_string)
+		return
+	} else {
+		// instantiate scanner and read standard output
+		var output = ""
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			var temp = string(scanner.Text())
+			output = output + temp + "\n"
+		}
+
+		var response = output
+
+		scanner = bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			output = string(scanner.Text())
+			response = response + output
+		}
+
+		idLine := response[strings.Index(response, "ID:"):strings.Index(response, "Title")]
+		id := strings.TrimSpace(strings.TrimPrefix(idLine, "ID:"))
+
+		createdLine := response[strings.Index(response, "Created:"):strings.Index(response, "Updated")]
+		created := strings.TrimSpace(strings.TrimPrefix(createdLine, "Created:"))
+
+		updatedLine := response[strings.Index(response, "Updated:"):strings.Index(response, "Favorite")]
+		updated := strings.TrimSpace(strings.TrimPrefix(updatedLine, "Updated:"))
+
+		favoriteLine := response[strings.Index(response, "Favorite:"):strings.Index(response, "Version")]
+		favorite := strings.TrimSpace(strings.TrimPrefix(favoriteLine, "Favorite:"))
+
+		versionLine := response[strings.Index(response, "Version:"):strings.Index(response, "Category")]
+		version := strings.TrimSpace(strings.TrimPrefix(versionLine, "Version:"))
+
+		// categoryLine := response[strings.Index(response, "Category:"):]
+		// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
+
+		data.ID = types.StringValue(id)
+		data.Created = types.StringValue(created)
+		data.Updated = types.StringValue(updated)
+		data.Favorite = types.StringValue(favorite)
+		data.Version = types.StringValue(version)
+		data.Category = types.StringValue("password")
+
+		// Save data into Terraform state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
+
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -187,8 +289,117 @@ func (r *secretResource) Read(ctx context.Context, req resource.ReadRequest, res
 
 // Update updates the resource and sets the updated Terraform state on success.
 func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+
+	var data secretResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	// Different cases of update: execute commands by the optional fields that exist
+	args := []string{}
+	args = append(args, "item")
+	args = append(args, "edit")
+	args = append(args, data.ID.Value)
+	args = append(args, "--vault")
+	args = append(args, data.Vault.Value)
+
+	// update title
+	if data.NewTitle.Value != "" {
+		args = append(args, "title=")
+		args = append(args, data.Title.Value)
+	}
+
+	// update field
+	if data.FieldName.Value != "" && data.FieldType.Value != "" && data.FieldValue.Value != "" {
+		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]"+"=")
+		args = append(args, data.FieldValue.Value)
+	} else if data.FieldName.Value != "" && data.FieldType.Value != "" {
+		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]")
+	} else if data.FieldName.Value != "" && data.FieldValue.Value != "" {
+		args = append(args, data.FieldName.Value+"=")
+		args = append(args, data.FieldValue.Value)
+	}
+
+	if data.FieldType.Value != "" && data.FieldValue.Value != "" {
+		resp.Diagnostics.AddError(
+			"Error updating secret item:",
+			"if you have entered field type and value, please specify field name too!",
+		)
+		return
+	}
+
+	out, err := exec.Command("op", args...).Output()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating secret",
+			"Could not create secret, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	var response = string(out)
+
+	idLine := response[strings.Index(response, "ID:"):strings.Index(response, "Title")]
+	id := strings.TrimSpace(strings.TrimPrefix(idLine, "ID:"))
+
+	titleLine := response[strings.Index(response, "Title:"):strings.Index(response, "Vault")]
+	title := strings.TrimSpace(strings.TrimPrefix(titleLine, "Title:"))
+
+	vaultLine := response[strings.Index(response, "Vault:"):strings.Index(response, "Created")]
+	vault := strings.TrimSpace(strings.TrimPrefix(vaultLine, "Vault:"))
+
+	createdLine := response[strings.Index(response, "Created:"):strings.Index(response, "Updated")]
+	created := strings.TrimSpace(strings.TrimPrefix(createdLine, "Created:"))
+
+	updatedLine := response[strings.Index(response, "Updated:"):strings.Index(response, "Favorite")]
+	updated := strings.TrimSpace(strings.TrimPrefix(updatedLine, "Updated:"))
+
+	favoriteLine := response[strings.Index(response, "Favorite:"):strings.Index(response, "Version")]
+	favorite := strings.TrimSpace(strings.TrimPrefix(favoriteLine, "Favorite:"))
+
+	versionLine := response[strings.Index(response, "Version:"):strings.Index(response, "Category")]
+	version := strings.TrimSpace(strings.TrimPrefix(versionLine, "Version:"))
+
+	// categoryLine := response[strings.Index(response, "Category:"):]
+	// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
+
+	// HOW TO PARSE FIELDS  ???
+
+	data.ID = types.StringValue(id)
+	data.Created = types.StringValue(created)
+	data.Updated = types.StringValue(updated)
+	data.Favorite = types.StringValue(favorite)
+	data.Version = types.StringValue(version)
+	data.Category = types.StringValue("password")
+	data.Title = types.StringValue(title)
+	data.Vault = types.StringValue(vault)
+
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
 func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+
+	var data secretResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
+	out, err := exec.Command("op", "item", "delete", data.Title.Value, "--vault", data.Vault.Value).Output()
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error deleting secret",
+			"Could not delete secret, unexpected error: "+err.Error(),
+		)
+		return
+	}
+	out = out
+	// var response = string(out)
+	// Need to modify data
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+
 }
