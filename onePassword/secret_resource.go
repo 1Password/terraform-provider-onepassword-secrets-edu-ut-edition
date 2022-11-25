@@ -28,8 +28,8 @@ func NewSecretResource() resource.Resource {
 type secretResource struct{}
 
 type secretResourceModel struct {
-	ID    types.String `tfsdk:"id"`
-	Title types.String `tfsdk:"title"`
+	ID             types.String    	   `tfsdk:"id"`
+	Title		   types.String 	   `tfsdk:"title"`
 	// tag            types.String        `tfsdk:"tag"`
 	// url            types.String        `tfsdk:"url"`
 	Vault          types.String        `tfsdk:"vault"`
@@ -39,10 +39,11 @@ type secretResourceModel struct {
 	Version        types.String        `tfsdk:"version"`
 	Category       types.String        `tfsdk:"category"`
 	PasswordRecipe passwordRecipeModel `tfsdk:"password_recipe"`
-	NewTitle       types.String        `tfsdk:"new_title"`
 	FieldName      types.String        `tfsdk:"field_name"`
 	FieldType      types.String        `tfsdk:"field_type"`
 	FieldValue     types.String        `tfsdk:"field_value"`
+	DeleteField    types.Bool          `tfsdk:"delete_field"`
+	UpdatePassword types.Bool          `tfsdk:"update_password"`
 }
 
 type passwordRecipeModel struct {
@@ -50,9 +51,8 @@ type passwordRecipeModel struct {
 	Length       types.Int64 `tfsdk:"length"`
 }
 
-type updateResponse struct {
+type updateResponse struct {}
 
-}
 // Metadata returns the resource type name.
 func (r *secretResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_secret"
@@ -87,28 +87,6 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:        types.StringType,
 				Optional:    true,
 			},
-			// for op item edit (update an item)
-			"new_title": {
-				Description: "new title of the item",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"field_name": {
-				Description: "name of field of an item for creation/update",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"field_type": {
-				Description: "type of field of an item for creation/update",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			"field_value": {
-				Description: "value of field of an item for creation/update",
-				Type:        types.StringType,
-				Optional:    true,
-			},
-			//
 			"created": {
 				Description: "The time the secret was created",
 				Type:        types.StringType,
@@ -154,6 +132,32 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				// PlanModifiers: tfsdk.AttributePlanModifiers{
 				// 	tfsdk.UseStateForUnknown(),
 				// },
+			},
+			// for op item edit (update)
+			"field_name": {
+				Description: "name of field of the item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_type": {
+				Description: "type of field of the item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"field_value": {
+				Description: "value of field of the item for creation/update",
+				Type:        types.StringType,
+				Optional:    true,
+			},
+			"delete_field": {
+				Description: "if true field of the item is deleted for update",
+				Type:        types.BoolType,
+				Optional:    true,
+			},
+			"update_password": {
+				Description: "if true password of the item is re auto-generated using password recipe",
+				Type:        types.BoolType,
+				Optional:    true,
 			},
 		},
 	}, nil
@@ -311,15 +315,49 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	args = append(args, prevState.Vault.Value)
 
 	// update title
-	if data.NewTitle.Value != "" {
-		args = append(args, "title="+data.NewTitle.Value)
+	if data.Title.Value != "" {
+		args = append(args, "title="+data.Title.Value)
 	}
 
-	if data.FieldName.Value != "" && data.FieldType.Value != "" && data.FieldValue.Value != "" {
+	// update password
+	if data.UpdatePassword.Value == true {
+		// TODO: error check if password recipe is given, if not return with error message
+		
+		var requested_password_length = int64(data.PasswordRecipe.Length.Value)
+		if requested_password_length < 1 || requested_password_length > 64 {
+			resp.Diagnostics.AddError("Password recipe not vaild error.", "Password length must be between 1 and 64 inclusive.")
+			return
+		}
+		var characters string = ""
+		for _, s := range data.PasswordRecipe.CharacterSet.Elements() {
+			characters += s.String() + ","
+		}
+		characters = strings.ReplaceAll(characters, "\"", "")
+		var password_recipe_flag = "=" + characters + strconv.FormatInt(requested_password_length, 10)
+		var generate_password_string = "--generate-password" + password_recipe_flag
+
+		args = append(args, generate_password_string)
+	}
+
+	if data.DeleteField.Value == true {
+		// delete given field
+		if data.FieldName.Value != "" {
+			args = append(args, data.FieldName.Value+"[delete]")
+		} else {
+			resp.Diagnostics.AddError(
+				"Error updating secret item:",
+				"if you want to delete a field, please specify the field name!",
+			)
+			return
+		}
+	} else if data.FieldName.Value != "" && data.FieldType.Value != "" && data.FieldValue.Value != "" {
+		// set field name, type, value
 		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]"+"="+data.FieldValue.Value)
 	} else if data.FieldName.Value != "" && data.FieldType.Value != "" {
+		// set field name, type
 		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]")
 	} else if data.FieldName.Value != "" && data.FieldValue.Value != "" {
+		// set field name, value
 		args = append(args, data.FieldName.Value+"="+data.FieldValue.Value)
 	} else if data.FieldType.Value != "" && data.FieldValue.Value != ""{
 		resp.Diagnostics.AddError(
@@ -342,11 +380,8 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	var response = string(out)
 
 	data.Category = types.StringValue(prevState.Category.Value)
-
 	data.Created = types.StringValue(prevState.Created.Value)
-
 	data.Favorite = types.StringValue(prevState.Favorite.Value)
-
 	data.ID = types.StringValue(prevState.ID.Value)
 
 	updatedLine := response[strings.Index(response, "Updated:"):strings.Index(response, "Favorite")]
