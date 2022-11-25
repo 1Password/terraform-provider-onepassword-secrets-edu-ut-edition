@@ -16,6 +16,9 @@ resource "onepassword_secret" "edu" {
     character_set = ["digits", "letters"]
     length        = 30
   }
+  field_name="cellnumber2"
+  field_type="phone"
+  field_value="12312341234"
 }
 
 output "new_secret" {

@@ -50,6 +50,9 @@ type passwordRecipeModel struct {
 	Length       types.Int64 `tfsdk:"length"`
 }
 
+type updateResponse struct {
+
+}
 // Metadata returns the resource type name.
 func (r *secretResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_secret"
@@ -290,37 +293,35 @@ func (r *secretResource) Read(ctx context.Context, req resource.ReadRequest, res
 // Update updates the resource and sets the updated Terraform state on success.
 func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 
+	// Read Terraform changed state data into the model
 	var data secretResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 
 	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	var prevState secretResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &prevState)...)
 
 	// Different cases of update: execute commands by the optional fields that exist
 	args := []string{}
 	args = append(args, "item")
 	args = append(args, "edit")
-	args = append(args, data.ID.Value)
+
+	args = append(args, prevState.ID.Value)
 	args = append(args, "--vault")
-	args = append(args, data.Vault.Value)
+	args = append(args, prevState.Vault.Value)
 
 	// update title
 	if data.NewTitle.Value != "" {
-		args = append(args, "title=")
-		args = append(args, data.Title.Value)
+		args = append(args, "title="+data.NewTitle.Value)
 	}
 
-	// update field
 	if data.FieldName.Value != "" && data.FieldType.Value != "" && data.FieldValue.Value != "" {
-		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]"+"=")
-		args = append(args, data.FieldValue.Value)
+		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]"+"="+data.FieldValue.Value)
 	} else if data.FieldName.Value != "" && data.FieldType.Value != "" {
 		args = append(args, data.FieldName.Value+"["+data.FieldType.Value+"]")
 	} else if data.FieldName.Value != "" && data.FieldValue.Value != "" {
-		args = append(args, data.FieldName.Value+"=")
-		args = append(args, data.FieldValue.Value)
-	}
-
-	if data.FieldType.Value != "" && data.FieldValue.Value != "" {
+		args = append(args, data.FieldName.Value+"="+data.FieldValue.Value)
+	} else if data.FieldType.Value != "" && data.FieldValue.Value != ""{
 		resp.Diagnostics.AddError(
 			"Error updating secret item:",
 			"if you have entered field type and value, please specify field name too!",
@@ -333,47 +334,28 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating secret",
-			"Could not create secret, unexpected error: "+err.Error(),
+			"Could not update secret, unexpected error: "+strings.Join(args, " "),
 		)
 		return
 	}
 
 	var response = string(out)
 
-	idLine := response[strings.Index(response, "ID:"):strings.Index(response, "Title")]
-	id := strings.TrimSpace(strings.TrimPrefix(idLine, "ID:"))
+	data.Category = types.StringValue(prevState.Category.Value)
 
-	titleLine := response[strings.Index(response, "Title:"):strings.Index(response, "Vault")]
-	title := strings.TrimSpace(strings.TrimPrefix(titleLine, "Title:"))
+	data.Created = types.StringValue(prevState.Created.Value)
 
-	vaultLine := response[strings.Index(response, "Vault:"):strings.Index(response, "Created")]
-	vault := strings.TrimSpace(strings.TrimPrefix(vaultLine, "Vault:"))
+	data.Favorite = types.StringValue(prevState.Favorite.Value)
 
-	createdLine := response[strings.Index(response, "Created:"):strings.Index(response, "Updated")]
-	created := strings.TrimSpace(strings.TrimPrefix(createdLine, "Created:"))
+	data.ID = types.StringValue(prevState.ID.Value)
 
 	updatedLine := response[strings.Index(response, "Updated:"):strings.Index(response, "Favorite")]
 	updated := strings.TrimSpace(strings.TrimPrefix(updatedLine, "Updated:"))
-
-	favoriteLine := response[strings.Index(response, "Favorite:"):strings.Index(response, "Version")]
-	favorite := strings.TrimSpace(strings.TrimPrefix(favoriteLine, "Favorite:"))
+	data.Updated = types.StringValue(updated)
 
 	versionLine := response[strings.Index(response, "Version:"):strings.Index(response, "Category")]
 	version := strings.TrimSpace(strings.TrimPrefix(versionLine, "Version:"))
-
-	// categoryLine := response[strings.Index(response, "Category:"):]
-	// category := strings.TrimSpace(strings.TrimPrefix(categoryLine, "Category:"))
-
-	// HOW TO PARSE FIELDS  ???
-
-	data.ID = types.StringValue(id)
-	data.Created = types.StringValue(created)
-	data.Updated = types.StringValue(updated)
-	data.Favorite = types.StringValue(favorite)
 	data.Version = types.StringValue(version)
-	data.Category = types.StringValue("password")
-	data.Title = types.StringValue(title)
-	data.Vault = types.StringValue(vault)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
