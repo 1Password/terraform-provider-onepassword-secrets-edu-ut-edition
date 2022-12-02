@@ -1,6 +1,6 @@
-# Terraform Provider onepassword
+# 1Password Terraform Framework Provider
 
-
+Use the 1Password Terraform Framwork Provider to read, create, delete or edit items in your 1Password Vaults.
 
 ## Build provider
 
@@ -35,4 +35,35 @@ Run the following command to initialize the workspace and apply the sample confi
 
 ```shell
 $ terraform init && terraform apply
+```
+      
+## Usage
+  Detailed documentation for using this provider can be found on the Terraform registry docs.
+      
+### Data Source Read
+```shell
+terraform {
+  required_providers {
+    onepassword = {
+      
+      // Local provider - change once published
+      source = "hashicorp.com/edu/onepassword"
+
+    }
+  }
+}
+
+provider "onepassword" {}
+
+data "onepassword_reference" "edu" {
+  vault = "test"
+  item  = "login"
+  field = "password"
+}
+
+output "login_secret" {
+  value = data.onepassword_reference.edu.secret
+}
+
+
 ```
