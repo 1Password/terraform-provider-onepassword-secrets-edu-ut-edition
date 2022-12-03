@@ -489,4 +489,14 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	// Need to modify data
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// remove the shell script
+		err = os.Remove("../../temp/linux_delete.sh")
+		// if an error occurs while deleting the shell script
+		if err != nil {
+			// log the error
+			log.Fatal("Error deleting shell script: %v", err)
+		}
+	}
 }
