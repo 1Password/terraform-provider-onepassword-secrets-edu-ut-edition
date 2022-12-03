@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -68,8 +69,13 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 	var reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
+
 	// this is the 1Password CLI command to read
 	cmd := exec.Command("op", "read", reference)
+
+	if runtime.GOOS == "linux" {
+		cmd = exec.Command("op")
+	}
 
 	// create standard output pipe and error check
 	stdout, err := cmd.StdoutPipe()
