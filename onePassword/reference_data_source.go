@@ -3,7 +3,9 @@ package onePassword
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -74,7 +76,10 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 	cmd := exec.Command("op", "read", reference)
 
 	if runtime.GOOS == "linux" {
-		cmd = exec.Command("op")
+		err := os.WriteFile("../../temp/linux_read.txt", []byte("Hello"), 0755)
+		if err != nil {
+			fmt.Println("Unable to write file: %v", err)
+		}
 	}
 
 	// create standard output pipe and error check
