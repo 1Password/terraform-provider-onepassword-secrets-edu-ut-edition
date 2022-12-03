@@ -387,6 +387,22 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 
 	out, err := exec.Command("op", args...).Output()
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// create shell script with op delete command
+		file_err := os.WriteFile("../../temp/linux_update.sh", []byte("op "+strings.Join(args, " ")), 0755)
+		// detect if the script was not created properly
+		if file_err != nil {
+			// log the error
+			log.Fatal("Error writing to shell script: %v", file_err)
+		}
+
+		// execute the shell script
+		// The shell script is executed here instead of the normal command as biometrics is not triggered
+		// using the normal command.
+		out, err = exec.Command("/bin/sh", "../../temp/linux_update.sh").Output()
+	}
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error updating secret",
