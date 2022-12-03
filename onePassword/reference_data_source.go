@@ -74,12 +74,19 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 	// this is the 1Password CLI command to read
 	cmd := exec.Command("op", "read", reference)
 
+	// if linux environment is detected
 	if runtime.GOOS == "linux" {
+		// create shell script with op read command
 		err := os.WriteFile("../../temp/linux_read.sh", []byte("op read "+reference), 0755)
+		// detect if the script was not created properly
 		if err != nil {
+			// log the error
 			log.Fatal("Error writing to shell script: %v", err)
 		}
 
+		// execute the shell script
+		// The shell script is executed here instead of the normal command as biometrics is not triggered
+		// using the normal command.
 		cmd = exec.Command("/bin/sh", "../../temp/linux_read.sh")
 	}
 
@@ -143,9 +150,13 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
+	// if linux environment is detected
 	if runtime.GOOS == "linux" {
+		// remove the shell script
 		err = os.Remove("../../temp/linux_read.sh")
+		// if an error occurs while deleting the shell script
 		if err != nil {
+			// log the error
 			log.Fatal("Error deleting shell script: %v", err)
 		}
 	}
