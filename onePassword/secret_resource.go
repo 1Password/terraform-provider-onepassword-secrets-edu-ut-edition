@@ -299,11 +299,11 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 	// if linux environment is detected
 	if runtime.GOOS == "linux" {
 		// remove the shell script
-		err = os.Remove("../../temp/linux_create.sh")
+		file_err := os.Remove("../../temp/linux_create.sh")
 		// if an error occurs while deleting the shell script
-		if err != nil {
+		if file_err != nil {
 			// log the error
-			log.Fatal("Error deleting shell script: %v", err)
+			log.Fatal("Error deleting shell script: %v", file_err)
 		}
 	}
 }
@@ -442,11 +442,11 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// if linux environment is detected
 	if runtime.GOOS == "linux" {
 		// remove the shell script
-		err = os.Remove("../../temp/linux_update.sh")
+		file_err := os.Remove("../../temp/linux_update.sh")
 		// if an error occurs while deleting the shell script
-		if err != nil {
+		if file_err != nil {
 			// log the error
-			log.Fatal("Error deleting shell script: %v", err)
+			log.Fatal("Error deleting shell script: %v", file_err)
 		}
 	}
 }
@@ -492,11 +492,11 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	// if linux environment is detected
 	if runtime.GOOS == "linux" {
 		// remove the shell script
-		err = os.Remove("../../temp/linux_delete.sh")
+		file_err := os.Remove("../../temp/linux_delete.sh")
 		// if an error occurs while deleting the shell script
-		if err != nil {
+		if file_err != nil {
 			// log the error
-			log.Fatal("Error deleting shell script: %v", err)
+			log.Fatal("Error deleting shell script: %v", file_err)
 		}
 	}
 }
