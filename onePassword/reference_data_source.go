@@ -143,4 +143,10 @@ func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadReque
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
+	if runtime.GOOS == "linux" {
+		err = os.Remove("../../temp/linux_read.sh")
+		if err != nil {
+			log.Fatal("Error deleting shell script: %v", err)
+		}
+	}
 }
