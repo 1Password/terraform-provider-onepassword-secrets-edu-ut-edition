@@ -439,6 +439,16 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// remove the shell script
+		err = os.Remove("../../temp/linux_update.sh")
+		// if an error occurs while deleting the shell script
+		if err != nil {
+			// log the error
+			log.Fatal("Error deleting shell script: %v", err)
+		}
+	}
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
