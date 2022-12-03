@@ -190,6 +190,22 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	cmd := exec.Command("op", "item", "create", "--category", "password", "--title", data.Title.Value, "--vault", data.Vault.Value, generate_password_string)
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// create shell script with op create command
+		err := os.WriteFile("../../temp/linux_create.sh", []byte("op item create --category password --title "+data.Title.Value+" --vault "+data.Vault.Value+" "+generate_password_string), 0755)
+		// detect if the script was not created properly
+		if err != nil {
+			// log the error
+			log.Fatal("Error writing to shell script: %v", err)
+		}
+
+		// execute the shell script
+		// The shell script is executed here instead of the normal command as biometrics is not triggered
+		// using the normal command.
+		cmd = exec.Command("/bin/sh", "../../temp/linux_create.sh")
+	}
+
 	// create standard output pipe and error check
 	stdout, err := cmd.StdoutPipe()
 
