@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"context"
 	"log"
+	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -28,8 +30,8 @@ func NewSecretResource() resource.Resource {
 type secretResource struct{}
 
 type secretResourceModel struct {
-	ID             types.String    	   `tfsdk:"id"`
-	Title		   types.String 	   `tfsdk:"title"`
+	ID    types.String `tfsdk:"id"`
+	Title types.String `tfsdk:"title"`
 	// tag            types.String        `tfsdk:"tag"`
 	// url            types.String        `tfsdk:"url"`
 	Vault          types.String        `tfsdk:"vault"`
@@ -51,7 +53,7 @@ type passwordRecipeModel struct {
 	Length       types.Int64 `tfsdk:"length"`
 }
 
-type updateResponse struct {}
+type updateResponse struct{}
 
 // Metadata returns the resource type name.
 func (r *secretResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -188,6 +190,22 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	cmd := exec.Command("op", "item", "create", "--category", "password", "--title", data.Title.Value, "--vault", data.Vault.Value, generate_password_string)
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// create shell script with op create command
+		err := os.WriteFile("../../temp/linux_create.sh", []byte("op item create --category password --title "+data.Title.Value+" --vault "+data.Vault.Value+" "+generate_password_string), 0755)
+		// detect if the script was not created properly
+		if err != nil {
+			// log the error
+			log.Fatal("Error writing to shell script: %v", err)
+		}
+
+		// execute the shell script
+		// The shell script is executed here instead of the normal command as biometrics is not triggered
+		// using the normal command.
+		cmd = exec.Command("/bin/sh", "../../temp/linux_create.sh")
+	}
+
 	// create standard output pipe and error check
 	stdout, err := cmd.StdoutPipe()
 
@@ -278,6 +296,16 @@ func (r *secretResource) Create(ctx context.Context, req resource.CreateRequest,
 		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 	}
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// remove the shell script
+		file_err := os.Remove("../../temp/linux_create.sh")
+		// if an error occurs while deleting the shell script
+		if file_err != nil {
+			// log the error
+			log.Fatal("Error deleting shell script: %v", file_err)
+		}
+	}
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -322,7 +350,7 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// update password
 	if data.UpdatePassword.Value == true {
 		// TODO: error check if password recipe is given, if not return with error message
-		
+
 		var requested_password_length = int64(data.PasswordRecipe.Length.Value)
 		if requested_password_length < 1 || requested_password_length > 64 {
 			resp.Diagnostics.AddError("Password recipe not vaild error.", "Password length must be between 1 and 64 inclusive.")
@@ -359,7 +387,7 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	} else if data.FieldName.Value != "" && data.FieldValue.Value != "" {
 		// set field name, value
 		args = append(args, data.FieldName.Value+"="+data.FieldValue.Value)
-	} else if data.FieldType.Value != "" && data.FieldValue.Value != ""{
+	} else if data.FieldType.Value != "" && data.FieldValue.Value != "" {
 		resp.Diagnostics.AddError(
 			"Error updating secret item:",
 			"if you have entered field type and value, please specify field name too!",
@@ -368,6 +396,22 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	out, err := exec.Command("op", args...).Output()
+
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// create shell script with op delete command
+		file_err := os.WriteFile("../../temp/linux_update.sh", []byte("op "+strings.Join(args, " ")), 0755)
+		// detect if the script was not created properly
+		if file_err != nil {
+			// log the error
+			log.Fatal("Error writing to shell script: %v", file_err)
+		}
+
+		// execute the shell script
+		// The shell script is executed here instead of the normal command as biometrics is not triggered
+		// using the normal command.
+		out, err = exec.Command("/bin/sh", "../../temp/linux_update.sh").Output()
+	}
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -395,6 +439,16 @@ func (r *secretResource) Update(ctx context.Context, req resource.UpdateRequest,
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// remove the shell script
+		file_err := os.Remove("../../temp/linux_update.sh")
+		// if an error occurs while deleting the shell script
+		if file_err != nil {
+			// log the error
+			log.Fatal("Error deleting shell script: %v", file_err)
+		}
+	}
 }
 
 // Delete deletes the resource and removes the Terraform state on success.
@@ -406,6 +460,22 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	out, err := exec.Command("op", "item", "delete", data.Title.Value, "--vault", data.Vault.Value).Output()
+
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// create shell script with op delete command
+		file_err := os.WriteFile("../../temp/linux_delete.sh", []byte("op item delete "+data.Title.Value+" --vault "+data.Vault.Value), 0755)
+		// detect if the script was not created properly
+		if file_err != nil {
+			// log the error
+			log.Fatal("Error writing to shell script: %v", file_err)
+		}
+
+		// execute the shell script
+		// The shell script is executed here instead of the normal command as biometrics is not triggered
+		// using the normal command.
+		out, err = exec.Command("/bin/sh", "../../temp/linux_delete.sh").Output()
+	}
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -419,4 +489,14 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	// Need to modify data
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
+	// if linux environment is detected
+	if runtime.GOOS == "linux" {
+		// remove the shell script
+		file_err := os.Remove("../../temp/linux_delete.sh")
+		// if an error occurs while deleting the shell script
+		if file_err != nil {
+			// log the error
+			log.Fatal("Error deleting shell script: %v", file_err)
+		}
+	}
 }
