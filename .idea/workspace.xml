@@ -4,7 +4,28 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="47206625-b65b-4cba-8b5f-5351486956a2" name="Changes" comment="" />
+    <list default="true" id="47206625-b65b-4cba-8b5f-5351486956a2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/docs/data-sources/reference.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/resources/secret.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/data-sources/onepassword-terraform-edu-ut-edition_reference/data-source.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/provider/provider.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/resources/onepassword-terraform-edu-ut-edition_secret/import.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/resources/onepassword-terraform-edu-ut-edition_secret/resource.tf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tools/tools.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/edit_item/main.tf" beforeDir="false" afterPath="$PROJECT_DIR$/examples/edit_item/main.tf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/reference/main.tf" beforeDir="false" afterPath="$PROJECT_DIR$/examples/reference/main.tf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/secret/main.tf" beforeDir="false" afterPath="$PROJECT_DIR$/examples/secret/main.tf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/installation/linux/setup.sh" beforeDir="false" afterPath="$PROJECT_DIR$/installation/linux/setup.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onePassword/provider.go" beforeDir="false" afterPath="$PROJECT_DIR$/onePassword/provider.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onePassword/reference_data_source.go" beforeDir="false" afterPath="$PROJECT_DIR$/onePassword/reference_data_source.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/onePassword/secret_resource.go" beforeDir="false" afterPath="$PROJECT_DIR$/onePassword/secret_resource.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -42,7 +63,8 @@
     "WebServerToolWindowFactoryState": "false",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/Users/ariap/GolandProjects/ProviderProj",
+    "last_opened_file_path": "C:/Users/ariap",
+    "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "terminal"
   }
 }]]></component>
