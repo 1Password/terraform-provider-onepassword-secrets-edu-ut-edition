@@ -1,0 +1,10 @@
+ID:          cepbkw35ngy44ej2m25vf7r5mq
+Title:       login
+Vault:       test (sbmg6tgfadd3qyw6gudqwdljx4)
+Created:     now
+Updated:     now
+Favorite:    false
+Version:     0
+Category:    LOGIN
+Fields:
+  password:    test_password

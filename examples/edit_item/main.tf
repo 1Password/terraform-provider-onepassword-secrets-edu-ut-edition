@@ -16,15 +16,11 @@ resource "onepassword-secrets-edu-ut-edition_secret" "edu" {
     character_set = ["digits", "letters"]
     length        = 30
   }
-  field_name="cellnumber2"
-  field_type="phone"
-  field_value="12312341234"
+  field_name  = "cellnumber2"
+  field_type  = "phone"
+  field_value = "12312341234"
 }
 
 output "new_secret" {
-<<<<<<< name_changes
   value = onepassword-secrets-edu-ut-edition_secret.edu
-=======
-  value = onepassword-terraform-edu-ut-edition_secret.edu
->>>>>>> main
 }

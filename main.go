@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"terraform-provider-onepassword-secrets-edu-ut-edition/onePassword"
+	"terraform-provider-onepassword/onePassword"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )

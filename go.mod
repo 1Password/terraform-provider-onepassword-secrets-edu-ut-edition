@@ -1,4 +1,4 @@
-module terraform-provider-onepassword-secrets-edu-ut-edition
+module terraform-provider-onepassword
 
 go 1.18
 
