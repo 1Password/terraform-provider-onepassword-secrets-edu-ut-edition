@@ -7,7 +7,7 @@ Use the 1Password Terraform Framwork Provider to read, create, delete or edit it
 Run the following command to build the provider
 
 ```shell
-$ go build -o terraform-provider-onepassword
+$ go build -o terraform-provider-onepassword-secrets-edu-ut-edition
 ```
 
 ## Test sample configuration
@@ -46,23 +46,23 @@ $ terraform init && terraform apply
 ```shell
 terraform {
   required_providers {
-    onepassword-terraform-edu-ut-edition = {
+    onepassword-secrets-edu-ut-edition = {
       source = "hashicorp.com/edu/onepassword"
 
     }
   }
 }
 
-provider "onepassword-terraform-edu-ut-edition" {}
+provider "onepassword-secrets-edu-ut-edition" {}
 
-data "onepassword-terraform-edu-ut-edition_reference" "edu" {
+data "onepassword-secrets-edu-ut-edition_reference" "edu" {
   vault = "test"
   item  = "uber"
   field = "password"
 }
 
 output "login_secret" {
-  value = data.onepassword-terraform-edu-ut-edition_reference.edu.secret
+  value = data.onepassword-secrets-edu-ut-edition_reference.edu.secret
 }
 
 
@@ -74,16 +74,16 @@ For deletion run 'terraform destroy'.
 ```shell
 terraform {
   required_providers {
-    onepassword-terraform-edu-ut-edition = {
+    onepassword-secrets-edu-ut-edition = {
       source = "hashicorp.com/edu/onepassword"
 
     }
   }
 }
 
-provider "onepassword-terraform-edu-ut-edition" {}
+provider "onepassword-secrets-edu-ut-edition" {}
 
-resource "onepassword-terraform-edu-ut-edition_secret" "edu" {
+resource "onepassword-secrets-edu-ut-edition_secret" "edu" {
   vault = "test"
   title = "newtitle3"
   password_recipe = {
@@ -98,6 +98,6 @@ resource "onepassword-terraform-edu-ut-edition_secret" "edu" {
 }
 
 output "new_secret" {
-  value = onepassword-terraform-edu-ut-edition_secret.edu
+  value = onepassword-secrets-edu-ut-edition_secret.edu
 }
 ```
