@@ -63,14 +63,15 @@ func (r *secretResource) Metadata(_ context.Context, req resource.MetadataReques
 // GetSchema defines the schema for the resource.
 func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: "A 1Password item which can be created, read, edited or deleted from the 1Password vault.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Description: "The id of the secret",
+				Description: "The id of the secret. Used for discerning multiple items.",
 				Type:        types.StringType,
 				Computed:    true,
 			},
 			"title": {
-				Description: "The title of the secret",
+				Description: "The title of the secret.",
 				Type:        types.StringType,
 				Optional:    true,
 			},
@@ -85,47 +86,49 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			// 	Optional:    true,
 			// },
 			"vault": {
-				Description: "The vault associated with the secret",
+				Description: "The vault associated with the secret.",
 				Type:        types.StringType,
 				Optional:    true,
 			},
 			"created": {
-				Description: "The time the secret was created",
+				Description: "The time at which the secret was created.",
 				Type:        types.StringType,
 				Computed:    true,
 			},
 			"updated": {
-				Description: "The time the secret was last updated",
+				Description: "The time the secret was last updated.",
 				Type:        types.StringType,
 				Computed:    true,
 			},
 			"favorite": {
-				Description: "Whether the secret is favourited or not",
+				Description: "Whether the secret is favourited or not.",
 				Type:        types.StringType,
 				Computed:    true,
 			},
 			"version": {
-				Description: "The version of the secret",
+				Description: "The version of the secret.",
 				Type:        types.StringType,
 				Computed:    true,
 			},
 			"category": {
-				Description: "The category of the secret",
+				Description: "The category of the secret.",
 				Type:        types.StringType,
 				// Optional:    true,
 				Computed: true,
 			},
 			"password_recipe": {
-				Description: "The password recipe for the secret",
+				Description: "The password recipe for the secret, for secret generation.",
 				Optional:    true,
 				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 					"character_set": {
-						Description: "The id of the secret",
-						Type:        types.SetType{ElemType: types.StringType},
-						Optional:    true,
+						Description: " The restrictions for password generation. The array elements can be set for the " +
+							"type of secret generated e.x ['digits', 'letters'] will generate a password" +
+							" comprising of only digits and letters.",
+						Type:     types.SetType{ElemType: types.StringType},
+						Optional: true,
 					},
 					"length": {
-						Description: "The title of the secret",
+						Description: "The length of the generated secret.",
 						Type:        types.Int64Type,
 						Optional:    true,
 					},
@@ -137,27 +140,27 @@ func (r *secretResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 			},
 			// for op item edit (update)
 			"field_name": {
-				Description: "name of field of the item for creation/update",
+				Description: "The name of field of the item for creation/update",
 				Type:        types.StringType,
 				Optional:    true,
 			},
 			"field_type": {
-				Description: "type of field of the item for creation/update",
+				Description: "The type of field of the item for creation/update",
 				Type:        types.StringType,
 				Optional:    true,
 			},
 			"field_value": {
-				Description: "value of field of the item for creation/update",
+				Description: "The value of field of the item for creation/update",
 				Type:        types.StringType,
 				Optional:    true,
 			},
 			"delete_field": {
-				Description: "if true field of the item is deleted for update",
+				Description: "If true, the field of the item is deleted for update",
 				Type:        types.BoolType,
 				Optional:    true,
 			},
 			"update_password": {
-				Description: "if true password of the item is re auto-generated using password recipe",
+				Description: "If true, the password of the item is re auto-generated using password recipe.",
 				Type:        types.BoolType,
 				Optional:    true,
 			},
@@ -315,7 +318,7 @@ func (r *secretResource) Read(ctx context.Context, req resource.ReadRequest, res
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	// Typically resources will make external calls, however this example
+	// Typically data-sources will make external calls, however this example
 	// omits any refreshed data updates for brevity.
 
 	// Save updated data into Terraform state

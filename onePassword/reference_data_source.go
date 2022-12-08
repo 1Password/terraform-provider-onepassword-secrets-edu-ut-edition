@@ -40,23 +40,25 @@ func (d *referenceDataSource) Metadata(_ context.Context, req datasource.Metadat
 // GetSchema defines the schema for the data source.
 func (d *referenceDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: "Reads a 1Password secret from a vault.",
 		Attributes: map[string]tfsdk.Attribute{
 			"vault": {
-				Type:     types.StringType,
-				Required: true,
+				Description: "The name of the vault from which the item is fetched. Must be present in 1Password account.",
+				Type:        types.StringType,
+				Required:    true,
 			},
 			"item": {
-				Description: "The name of the item to retrieve.",
+				Description: "The name of the item to retrieve e.x Netflix.",
 				Type:        types.StringType,
 				Required:    true,
 			},
 			"field": {
-				Description: "The name of the field to retrieve.",
+				Description: "The name of the field of the secret to retrieve. Usually password.",
 				Type:        types.StringType,
 				Required:    true,
 			},
 			"secret": {
-				Description: "The secret of the field item in the vault",
+				Description: "The secret of the field item in the vault. The secret value is stored here.",
 				Type:        types.StringType,
 				Computed:    true,
 			},

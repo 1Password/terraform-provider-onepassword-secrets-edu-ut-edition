@@ -25,7 +25,7 @@ type onePasswordProvider struct{}
 
 // Metadata returns the provider type name.
 func (p *onePasswordProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "onepassword"
+	resp.TypeName = "onepassword-terraform-edu-ut-edition"
 }
 
 // onePasswordProviderModel maps provider schema data to a Go type.
@@ -37,7 +37,7 @@ func (p *onePasswordProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 	return tfsdk.Schema{}, nil
 }
 
-// Configure prepares a onePassword API client for data sources and resources.
+// Configure prepares a onePassword API client for data sources and data-sources.
 func (p *onePasswordProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 }
 
@@ -48,7 +48,7 @@ func (p *onePasswordProvider) DataSources(_ context.Context) []func() datasource
 	}
 }
 
-// Resources defines the resources implemented in the provider.
+// Resources defines the data-sources implemented in the provider.
 func (p *onePasswordProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewSecretResource,
