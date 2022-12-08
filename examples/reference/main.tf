@@ -9,14 +9,14 @@ terraform {
 
 provider "onepassword-secrets-edu-ut-edition" {}
 
-data "onepassword-secrets-edu-ut-edition" "edu" {
+data "onepassword-secrets-edu-ut-edition_reference" "edu" {
   vault = "test"
   item  = "uber4"
   field = "password"
 }
 
 output "login_secret" {
-  value = data.onepassword-secrets-edu-ut-edition.edu.secret
+  value = data.onepassword-secrets-edu-ut-edition_reference.edu.secret
 }
 
 
