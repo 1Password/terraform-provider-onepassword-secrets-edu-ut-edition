@@ -22,5 +22,9 @@ resource "onepassword-secrets-edu-ut-edition_secret" "edu" {
 }
 
 output "new_secret" {
+<<<<<<< name_changes
   value = onepassword-secrets-edu-ut-edition_secret.edu
+=======
+  value = onepassword-terraform-edu-ut-edition_secret.edu
+>>>>>>> main
 }

@@ -11,7 +11,7 @@ provider "onepassword-secrets-edu-ut-edition" {}
 
 data "onepassword-secrets-edu-ut-edition_reference" "edu" {
   vault = "test"
-  item  = "uber4"
+  item  = "login"
   field = "password"
 }
 
