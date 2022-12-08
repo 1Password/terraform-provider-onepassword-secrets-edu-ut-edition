@@ -462,12 +462,12 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	out, err := exec.Command("op", "item", "delete", data.Title.Value, "--vault", data.Vault.Value).Output()
+	cmd := exec.Command("op", "item", "delete", data.ID.Value)
 
 	// if linux environment is detected
 	if runtime.GOOS == "linux" {
 		// create shell script with op delete command
-		file_err := os.WriteFile("../../temp/linux_delete.sh", []byte("op item delete "+data.Title.Value+" --vault "+data.Vault.Value), 0755)
+		file_err := os.WriteFile("../../temp/linux_delete.sh", []byte("op item delete "+data.ID.Value), 0755)
 		// detect if the script was not created properly
 		if file_err != nil {
 			// log the error
@@ -477,19 +477,64 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		// execute the shell script
 		// The shell script is executed here instead of the normal command as biometrics is not triggered
 		// using the normal command.
-		out, err = exec.Command("/bin/sh", "../../temp/linux_delete.sh").Output()
+		cmd = exec.Command("/bin/sh", "../../temp/linux_delete.sh")
 	}
+	// create standard output pipe and error check
+	stdout, err := cmd.StdoutPipe()
 
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deleting secret",
-			"Could not delete secret, unexpected error: "+err.Error(),
-		)
-		return
+		log.Fatal(err)
 	}
-	out = out
-	// var response = string(out)
-	// Need to modify data
+
+	// create standard error pipe and error check
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// run CLI command and error check the call itself not the output
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	// instantiate scanner and read standard output
+	scanner := bufio.NewScanner(stdout)
+	scanner.Scan()
+
+	// instantiate scanner and read standard error
+	scanner = bufio.NewScanner(stderr)
+	scanner.Scan()
+	var error_message = string(scanner.Text())
+
+	// errors from CLI command we will be checking
+	var doesnt_exist = "isn't an item in the \"" + data.Vault.Value + "\" vault"
+	var duplicate = "More than one item matches \"" + data.Title.Value + "\""
+
+	if strings.Contains(error_message, doesnt_exist) {
+		var error_string = "Could not find item error."
+
+		var start_index = strings.Index(error_message, string(data.Title.Value)) + len(string(data.Title.Value)) + 2
+		var end_index = strings.Index(error_message, "vault.")
+		var detail_string = "Details: " + error_message[start_index:end_index]
+
+		resp.Diagnostics.AddError(error_string, detail_string)
+
+	} else if strings.Contains(error_message, duplicate) {
+		var error_string = "Duplicate Item in Vault error."
+
+		var start_index = strings.Index(error_message, "More")
+		var detail_string = error_message[start_index:] + "\n"
+
+		for scanner.Scan() {
+			error_message = string(scanner.Text())
+			detail_string = detail_string + error_message + "\n"
+		}
+
+		resp.Diagnostics.AddError(error_string, detail_string[:strings.LastIndex(detail_string, "\n")])
+
+	} else {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	}
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
 	// if linux environment is detected

@@ -28,6 +28,7 @@ type referenceDataSource struct {
 type referenceDataSourceModel struct {
 	Vault  types.String `tfsdk:"vault"`
 	Item   types.String `tfsdk:"item"`
+	ID     types.String `tfsdk:"id"`
 	Field  types.String `tfsdk:"field"`
 	Secret types.String `tfsdk:"secret"`
 }
@@ -52,6 +53,11 @@ func (d *referenceDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				Type:        types.StringType,
 				Required:    true,
 			},
+			"id": {
+				Description: "The ID of the item to retrieve",
+				Type:        types.StringType,
+				Optional:    true,
+			},
 			"field": {
 				Description: "The name of the field of the secret to retrieve. Usually password.",
 				Type:        types.StringType,
@@ -69,10 +75,15 @@ func (d *referenceDataSource) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 // Read refreshes the Terraform state with the latest data.
 func (d *referenceDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data referenceDataSourceModel
-
+	var reference string
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	var reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
 
+	// If an ID is provided, use that ID
+	if data.ID.Value != "" {
+		reference = "op://" + data.Vault.Value + "/" + data.ID.Value + "/" + data.Field.Value
+	} else {
+		reference = "op://" + data.Vault.Value + "/" + data.Item.Value + "/" + data.Field.Value
+	}
 	// this is the 1Password CLI command to read
 	cmd := exec.Command("op", "read", reference)
 
