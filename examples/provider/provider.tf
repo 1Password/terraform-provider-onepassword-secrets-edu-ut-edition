@@ -1,1 +1,1 @@
-provider "onepassword-terraform-edu-ut-edition" {}
+provider "onepassword-secrets-edu-ut-edition" {}

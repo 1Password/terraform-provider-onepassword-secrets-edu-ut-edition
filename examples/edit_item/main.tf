@@ -1,15 +1,15 @@
 terraform {
   required_providers {
-    onepassword-terraform-edu-ut-edition = {
+    onepassword-secrets-edu-ut-edition = {
       source = "hashicorp.com/edu/onepassword"
 
     }
   }
 }
 
-provider "onepassword-terraform-edu-ut-edition" {}
+provider "onepassword-secrets-edu-ut-edition" {}
 
-resource "onepassword-terraform-edu-ut-edition_secret" "edu" {
+resource "onepassword-secrets-edu-ut-edition_secret" "edu" {
   vault = "test"
   title = "newtitle"
   password_recipe = {
@@ -22,5 +22,5 @@ resource "onepassword-terraform-edu-ut-edition_secret" "edu" {
 }
 
 output "new_secret" {
-  value = onepassword_secret.edu
+  value = onepassword-secrets-edu-ut-edition_secret.edu
 }

@@ -25,7 +25,7 @@ type onePasswordProvider struct{}
 
 // Metadata returns the provider type name.
 func (p *onePasswordProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "onepassword-terraform-edu-ut-edition"
+	resp.TypeName = "onepassword-secrets-edu-ut-edition"
 }
 
 // onePasswordProviderModel maps provider schema data to a Go type.
