@@ -13,7 +13,7 @@ with open("main.tf", "r") as file:
         original_lines.append(line)
 
 modified_lines = [x for x in original_lines]
-modified_lines[16] = "        length        = 10\n"
+modified_lines[16] = "    length        = 10\n"
 with open("main.tf", "w") as file:
     file.writelines(modified_lines)
 
