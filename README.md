@@ -24,6 +24,8 @@ dev_overrides {
   }
   ```
   Where <GOBIN> is the directory of the go bin (obtained from ```go env GOBIN```).
+  For more information please refer to the official documentation at 
+  https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework/providers-plugin-framework-provider.
   
 Then, navigate to the `examples` directory. 
 
@@ -44,26 +46,58 @@ $ terraform init && terraform apply
 ```shell
 terraform {
   required_providers {
-    onepassword = {
-      
-      // Local provider - change once published
+    onepassword-terraform-edu-ut-edition = {
       source = "hashicorp.com/edu/onepassword"
 
     }
   }
 }
 
-provider "onepassword" {}
+provider "onepassword-terraform-edu-ut-edition" {}
 
-data "onepassword_reference" "edu" {
+data "onepassword-terraform-edu-ut-edition_reference" "edu" {
   vault = "test"
-  item  = "login"
+  item  = "uber"
   field = "password"
 }
 
 output "login_secret" {
-  value = data.onepassword_reference.edu.secret
+  value = data.onepassword-terraform-edu-ut-edition_reference.edu.secret
 }
 
 
+```
+### Resource create edit and delete
+For creation and editing (after creation) run 'terraform apply'.
+
+For deletion run 'terraform destroy'.
+```shell
+terraform {
+  required_providers {
+    onepassword-terraform-edu-ut-edition = {
+      source = "hashicorp.com/edu/onepassword"
+
+    }
+  }
+}
+
+provider "onepassword-terraform-edu-ut-edition" {}
+
+resource "onepassword-terraform-edu-ut-edition_secret" "edu" {
+  vault = "test"
+  title = "newtitle3"
+  password_recipe = {
+    character_set = ["digits", "letters"]
+    length        = 30
+  }
+  field_name="cellnumber"
+  field_type="phone"
+  field_value="123-1234-1234"
+  delete_field=false
+  update_password=true
+}
+
+output "new_secret" {
+  value = onepassword-terraform-edu-ut-edition_secret.edu
+}
 ```
