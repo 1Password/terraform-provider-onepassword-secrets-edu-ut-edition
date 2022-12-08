@@ -1,4 +1,4 @@
-resource "onepassword-secrets-edu-ut-edition" "edu" {
+resource "onepassword-secrets-edu-ut-edition_secret" "edu" {
   vault = "test"
   title = "newtitle"
   password_recipe = {
