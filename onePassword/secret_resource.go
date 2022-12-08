@@ -459,7 +459,7 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 	// Read Terraform prior state data into the model
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
-	out, err := exec.Command("op", "item", "delete", data.Title.Value, "--vault", data.Vault.Value).Output()
+	cmd := exec.Command("op", "item", "delete", data.Title.Value, "--vault", data.Vault.Value)
 
 	// if linux environment is detected
 	if runtime.GOOS == "linux" {
@@ -474,21 +474,57 @@ func (r *secretResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		// execute the shell script
 		// The shell script is executed here instead of the normal command as biometrics is not triggered
 		// using the normal command.
-		out, err = exec.Command("/bin/sh", "../../temp/linux_delete.sh").Output()
+		cmd = exec.Command("/bin/sh", "../../temp/linux_delete.sh")
 	}
+
+	// create standard output pipe and error check
+	stdout, err := cmd.StdoutPipe()
 
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error deleting secret",
-			"Could not delete secret, unexpected error: "+err.Error(),
-		)
-		return
+		log.Fatal(err)
 	}
-	out = out
-	// var response = string(out)
-	// Need to modify data
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 
+	// create standard error pipe and error check
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// run CLI command and error check the call itself not the output
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	// instantiate scanner and read standard output
+	scanner := bufio.NewScanner(stdout)
+	scanner.Scan()
+	var output = string(scanner.Text())
+
+	if strings.Contains(error_message, doesnt_exist) {
+		var error_string = "Could not find item error."
+
+		var start_index = strings.Index(error_message, string(data.Field.Value)) + len(string(data.Field.Value)) + 2
+		var end_index = strings.Index(error_message, "vault.")
+		var detail_string = "Details: " + error_message[start_index:end_index]
+
+		resp.Diagnostics.AddError(error_string, detail_string)
+
+	} else if strings.Contains(error_message, duplicate) {
+		var error_string = "Duplicate Item in Vault error."
+
+		var start_index = strings.Index(error_message, "More")
+		var detail_string = error_message[start_index:] + "\n"
+
+		for scanner.Scan() {
+			error_message = string(scanner.Text())
+			detail_string = detail_string + error_message + "\n"
+		}
+
+		resp.Diagnostics.AddError(error_string, detail_string[:strings.LastIndex(detail_string, "\n")])
+
+	} else {
+	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	}
 	// if linux environment is detected
 	if runtime.GOOS == "linux" {
 		// remove the shell script
