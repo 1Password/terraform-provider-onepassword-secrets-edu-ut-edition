@@ -8,7 +8,7 @@ import (
 )
 
 // Provider documentation generation.
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name onepassword-terraform-edu-ut-edition
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name onepassword-secrets-edu-ut-edition
 
 func main() {
 	providerserver.Serve(context.Background(), onePassword.New, providerserver.ServeOpts{
