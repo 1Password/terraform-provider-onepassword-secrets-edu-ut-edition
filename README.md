@@ -7,7 +7,7 @@ Use the 1Password Terraform Framwork Provider to read, create, delete or edit it
 Run the following command to build the provider
 
 ```shell
-$ go build -o terraform-provider-onepassword-secrets-edu-ut-edition
+$ go build -o terraform-provider-onepassword
 ```
 
 ## Test sample configuration
